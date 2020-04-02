@@ -1,0 +1,1 @@
+DROP TABLE sui_hei_puzzle_tokenize_cache

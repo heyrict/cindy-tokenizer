@@ -1,0 +1,22 @@
+[package]
+name = "cindy-tokenizer"
+version = "0.0.1"
+authors = ["heyrict <xiezh0831@yahoo.co.jp>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-rt = "^1"
+actix-web = "^2"
+diesel = { version = "^1", features = ["postgres", "r2d2", "serde_json"] }
+dotenv = "^0.15"
+lazy_static = "^1.4"
+mecab = "*"
+r2d2 = "^0.8"
+regex = "^1"
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
+
+[profile.release]
+lto = true
