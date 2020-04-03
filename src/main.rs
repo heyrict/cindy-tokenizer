@@ -11,6 +11,8 @@ mod schema;
 mod tokenize;
 
 use actix_web::{get, web, App, Error, HttpResponse, HttpServer};
+use actix_cors::Cors;
+use actix_web::middleware::Logger;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
@@ -35,7 +37,7 @@ async fn tokenize_puzzle(
     let puzzle_id = info.into_inner();
     let conn = pool.get().expect("couldn't get db connection from pool");
 
-    let tokens_list: Vec<Vec<tokenize::Token>> =
+    let tokens_list: Vec<models::DialogueTokens> =
         web::block(move || actions::get_puzzle_tokens(puzzle_id, &conn))
             .await
             .map_err(|e| {
@@ -49,6 +51,7 @@ async fn tokenize_puzzle(
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info,diesel=debug");
+    env_logger::init();
     dotenv().ok();
 
     let bind = format!(
@@ -58,7 +61,16 @@ async fn main() -> std::io::Result<()> {
     );
     let pool = establish_connection();
 
-    HttpServer::new(move || App::new().data(pool.clone()).service(tokenize_puzzle))
+    HttpServer::new(move || {
+    	App::new()
+            .wrap(Cors::new()
+                .allowed_origin(&env::var("ALLOWED_ORIGIN").unwrap_or("127.0.0.1:3000".to_owned()))
+                .max_age(3600)
+                .finish())
+            .wrap(Logger::default())
+            .data(pool.clone())
+            .service(tokenize_puzzle)
+    })
         .bind(&bind)?
         .run()
         .await

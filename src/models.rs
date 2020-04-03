@@ -41,6 +41,12 @@ pub struct Dialogue {
     pub modified: Timestamptz,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct DialogueTokens {
+    pub id: i32,
+    pub tokens: Vec<Token>,
+}
+
 #[derive(Queryable, Serialize, Deserialize)]
 pub struct PuzzleTokenCache {
     pub id: i32,
@@ -49,7 +55,7 @@ pub struct PuzzleTokenCache {
 }
 
 impl PuzzleTokenCache {
-    pub fn to_tokens(self) -> Result<Vec<Vec<Token>>, serde_json::Error> {
+    pub fn to_tokens(self) -> Result<Vec<DialogueTokens>, serde_json::Error> {
         serde_json::from_value(self.tokens)
     }
 }
@@ -62,7 +68,7 @@ pub struct NewPuzzleTokenCache {
 }
 
 impl NewPuzzleTokenCache {
-    pub fn new(puzzle_id: i32, tokens: &Vec<Vec<Token>>) -> Self {
+    pub fn new(puzzle_id: i32, tokens: &Vec<DialogueTokens>) -> Self {
         Self {
             puzzle_id,
             tokens: serde_json::to_value(tokens).unwrap(),

@@ -14,8 +14,7 @@ fn strip_symbols<'a>(s: &'a str) -> Cow<'a, str> {
 fn simplify_features<'a>(s: &'a str) -> (String, String) {
     lazy_static! {
         static ref POS_RE: Regex = Regex::new(
-            r#"^(?P<pos>[^,]+),(?P<pos_detail_1>[^,]+),[^,]+,[^,]+,"
-                       "[^,]+,[^,]+,(?P<orig>[^,]+)"#
+            r#"^(?P<pos>[^,]+),(?P<pos_detail_1>[^,]+),[^,]+,[^,]+,[^,]+,[^,]+,(?P<orig>[^,]+)"#
         )
         .unwrap();
     }
@@ -34,7 +33,7 @@ pub struct Token {
 
 impl From<Node> for Token {
     fn from(node: Node) -> Token {
-        let (text, poc) = simplify_features(&node.feature);
+        let (poc, text) = simplify_features(&node.feature);
         Token { text, poc }
     }
 }
@@ -62,7 +61,8 @@ impl Token {
         // Drop poc
         iter.next();
         // Returns poc_detail_1
-        iter.next().unwrap_or("*")
+        let poc_detail = iter.next().unwrap_or("*");
+	poc_detail
     }
 }
 

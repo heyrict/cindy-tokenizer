@@ -11,6 +11,7 @@ pub fn find_puzzle_dialogues(
 
     sui_hei_dialogue
         .filter(puzzle_id.eq(puzzle_id_p))
+        .order(id.asc())
         .load::<Dialogue>(conn)
 }
 
@@ -28,7 +29,7 @@ pub fn find_puzzle_token_cache_by_id(
 
 pub fn insert_puzzle_token_cache(
     puzzle_id: i32,
-    tokens: &Vec<Vec<Token>>,
+    tokens: &Vec<DialogueTokens>,
     conn: &PgConnection,
 ) -> Result<PuzzleTokenCache, Error> {
     use crate::schema::sui_hei_puzzle_tokenize_cache;
@@ -40,7 +41,7 @@ pub fn insert_puzzle_token_cache(
         .get_result(conn)
 }
 
-pub fn get_puzzle_tokens(puzzle_id_p: i32, conn: &PgConnection) -> Result<Vec<Vec<Token>>, Error> {
+pub fn get_puzzle_tokens(puzzle_id_p: i32, conn: &PgConnection) -> Result<Vec<DialogueTokens>, Error> {
     let cache = find_puzzle_token_cache_by_id(puzzle_id_p, &conn)?;
     match cache {
         Some(cache) => cache
@@ -51,10 +52,14 @@ pub fn get_puzzle_tokens(puzzle_id_p: i32, conn: &PgConnection) -> Result<Vec<Ve
             let dialogues = find_puzzle_dialogues(puzzle_id_p, &conn)?;
             let tokens_list = dialogues
                 .iter()
-                .map(|dialogue| tokenize(&dialogue.question))
-                .map(|tokens| {
+                .map(|dialogue| DialogueTokens {
+                    id: dialogue.id,
+                    tokens: tokenize(&dialogue.question),
+                })
+                .map(|dtokens| {
                     // Filtering useless tokens
-                    tokens
+                    let tokens = dtokens
+                        .tokens
                         .into_iter()
                         .filter(|token| match token.get_poc() {
                             Poc::Noun => match token.get_poc_detail() {
@@ -64,9 +69,13 @@ pub fn get_puzzle_tokens(puzzle_id_p: i32, conn: &PgConnection) -> Result<Vec<Ve
                             Poc::Verb => true,
                             _ => false,
                         })
-                        .collect::<Vec<Token>>()
+                        .collect::<Vec<Token>>();
+                    DialogueTokens {
+                        id: dtokens.id,
+                        tokens,
+                    }
                 })
-                .collect::<Vec<Vec<Token>>>();
+                .collect::<Vec<DialogueTokens>>();
 
             // Cache the tokenized tokens
             insert_puzzle_token_cache(puzzle_id_p, &tokens_list, &conn)?;
